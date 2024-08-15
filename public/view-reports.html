@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ver Relatórios</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <!-- Menu de Navegação -->
+  <div id="menu-container"></div>
+  
+  <div class="container">
+    <div class="content">
+      <h3>Relatórios Existentes</h3>
+      <div id="reports-list">
+        <!-- Lista de relatórios será inserida aqui -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Edição de Relatório -->
+  <div id="report-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-btn" id="close-modal">&times;</span>
+      <h3 id="modal-title">Editar Relatório</h3>
+      <form id="report-form">
+        <input type="hidden" id="report-id" />
+        <input type="text" id="report-title" placeholder="Título do Relatório" required />
+        <textarea id="report-content" placeholder="Conteúdo do Relatório" required></textarea>
+        <button type="submit" id="submit-report">Salvar</button>
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+    import { getFirestore, collection, getDocs, updateDoc, deleteDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-analytics.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCennWobnxB465Wo3gzSDcTdeOQcR9b0HE",
+      authDomain: "relatorio-31622.firebaseapp.com",
+      projectId: "relatorio-31622",
+      storageBucket: "relatorio-31622.appspot.com",
+      messagingSenderId: "744396968175",
+      appId: "1:744396968175:web:689537ff8380e8f9c7cb1a",
+      measurementId: "G-BB4Q8J5TG4"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const analytics = getAnalytics(app);
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadMenu();
+      loadReports();
+      setupModal();
+    });
+
+    async function loadReports() {
+      try {
+        const querySnapshot = await getDocs(collection(db, 'reports'));
+        const reportsList = document.getElementById('reports-list');
+        reportsList.innerHTML = ''; // Limpa a lista antes de repopular
+
+        querySnapshot.forEach((doc) => {
+          const report = doc.data();
+          const reportItem = document.createElement('div');
+          reportItem.className = 'report-item';
+          reportItem.innerHTML = `
+            <h4>${report.title}</h4>
+            <p>${report.content}</p>
+            <button class="edit-report" data-id="${doc.id}">Editar</button>
+            <button class="delete-report" data-id="${doc.id}">Excluir</button>
+          `;
+          reportsList.appendChild(reportItem);
+        });
+
+        document.querySelectorAll('.edit-report').forEach(button => {
+          button.addEventListener('click', (e) => {
+            const id = e.target.getAttribute('data-id');
+            openModal(id);
+          });
+        });
+
+        document.querySelectorAll('.delete-report').forEach(button => {
+          button.addEventListener('click', (e) => {
+            const id = e.target.getAttribute('data-id');
+            deleteReport(id);
+          });
+        });
+      } catch (error) {
+        console.error('Erro ao carregar relatórios:', error);
+      }
+    }
+
+    async function createOrUpdateReport(event) {
+      event.preventDefault();
+      const title = document.getElementById('report-title').value;
+      const content = document.getElementById('report-content').value;
+      const id = document.getElementById('report-id').value;
+
+      try {
+        if (id) {
+          // Atualizar relatório existente
+          await updateDoc(doc(db, 'reports', id), {
+            title: title,
+            content: content
+          });
+          console.log('Relatório atualizado com sucesso!');
+        }
+        closeModal();
+        loadReports();
+      } catch (error) {
+        console.error('Erro ao salvar relatório:', error);
+      }
+    }
+
+    async function deleteReport(id) {
+      try {
+        await deleteDoc(doc(db, 'reports', id));
+        console.log('Relatório excluído com sucesso!');
+        loadReports();
+      } catch (error) {
+        console.error('Erro ao excluir relatório:', error);
+      }
+    }
+
+    function setupModal() {
+      const modal = document.getElementById('report-modal');
+      const closeModalButton = document.getElementById('close-modal');
+      const form = document.getElementById('report-form');
+
+      closeModalButton.addEventListener('click', closeModal);
+
+      form.addEventListener('submit', createOrUpdateReport);
+    }
+
+    async function openModal(id = null) {
+      const modal = document.getElementById('report-modal');
+      const titleInput = document.getElementById('report-title');
+      const contentInput = document.getElementById('report-content');
+      const reportIdInput = document.getElementById('report-id');
+      const modalTitle = document.getElementById('modal-title');
+
+      if (id) {
+        // Carregar dados do relatório para edição
+        const reportRef = doc(db, 'reports', id);
+        try {
+          const reportDoc = await getDoc(reportRef);
+          if (reportDoc.exists()) {
+            const report = reportDoc.data();
+            titleInput.value = report.title;
+            contentInput.value = report.content;
+            reportIdInput.value = id;
+            modalTitle.textContent = 'Editar Relatório';
+            modal.style.display = 'block';
+          } else {
+            console.log('Nenhum relatório encontrado com esse ID.');
+          }
+        } catch (error) {
+          console.error('Erro ao carregar relatório:', error);
+        }
+      } else {
+        // Preparar para criar um novo relatório
+        titleInput.value = '';
+        contentInput.value = '';
+        reportIdInput.value = '';
+        modalTitle.textContent = 'Criar Relatório';
+        modal.style.display = 'block';
+      }
+    }
+
+    function closeModal() {
+      document.getElementById('report-modal').style.display = 'none';
+    }
+
+    async function loadMenu() {
+      try {
+        const response = await fetch('menu.html');
+        const menuHTML = await response.text();
+        document.getElementById('menu-container').innerHTML = menuHTML;
+
+        document.getElementById('logout-button').addEventListener('click', async () => {
+          try {
+            await signOut(auth);
+            console.log('Logout bem-sucedido');
+            localStorage.removeItem('authToken');
+            window.location.href = 'index.html'; // Redirecionar para a página de login
+          } catch (error) {
+            console.error('Erro ao fazer logout:', error);
+          }
+        });
+      } catch (error) {
+        console.error('Erro ao carregar o menu:', error);
+      }
+    }
+  </script>
+  
+  <style>
+   /* Ajuste do Menu de Navegação */
+#menu-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 250px;
+  height: 100%;
+  background-color: #333;
+  color: #fff;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+  z-index: 1000;
+  padding: 20px;
+  box-sizing: border-box;
+  overflow-y: auto; /* Permitir rolagem no menu */
+}
+
+/* Ajustar a margem da área de conteúdo para não ultrapassar o menu */
+.container {
+  margin-left: 250px;
+  padding: 20px;
+  margin-top: auto; /* Adiciona espaço na parte superior */
+  margin-left: 260px;
+  box-sizing: border-box;
+  max-width: calc(100% - 250px); /* Garante que o conteúdo não ultrapasse a tela */
+}
+
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000; /* Certifique-se de que o modal está acima de outros conteúdos */
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.4);
+    }
+    .modal-content {
+      background-color: #fefefe;
+      margin: 15% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%;
+      max-width: 600px;
+    }
+    .close-btn {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+    }
+    .close-btn:hover,
+    .close-btn:focus {
+      color: black;
+      text-decoration: none;
+      cursor: pointer;
+    }
+  
+  /* Lista de Relatórios */
+#reports-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  justify-content: center;
+  padding: 10px;
+  box-sizing: border-box;
+  max-width: 100%; /* Garante que a lista não ultrapasse o contêiner */
+}
+
+.report-item {
+  flex: 1 1 calc(33.333% - 30px);
+  box-sizing: border-box;
+  margin-bottom: 15px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  max-width: calc(33.333% - 30px); /* Garante que os itens não ultrapassem o contêiner */
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .report-item {
+    flex: 1 1 calc(50% - 20px);
+  }
+}
+
+@media (max-width: 480px) {
+  .report-item {
+    flex: 1 1 100%;
+  }
+}
+  </style>
+</body>
+</html>

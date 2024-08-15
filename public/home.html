@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <!-- Menu de Navegação -->
+  <div id="menu-container"></div>
+  
+  <div class="content">
+    <div class="widget">
+      <h3>Overview</h3>
+      <p>Here is an overview of the dashboard content.</p>
+    </div>
+    <div class="widget">
+      <h3>Statistics</h3>
+      <p>Some statistics about the application or user data.</p>
+    </div>
+    <div class="widget">
+      <h3>Recent Activity</h3>
+      <p>List of recent activities or notifications.</p>
+    </div>
+  </div>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-analytics.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCennWobnxB465Wo3gzSDcTdeOQcR9b0HE",
+      authDomain: "relatorio-31622.firebaseapp.com",
+      projectId: "relatorio-31622",
+      storageBucket: "relatorio-31622.appspot.com",
+      messagingSenderId: "744396968175",
+      appId: "1:744396968175:web:689537ff8380e8f9c7cb1a",
+      measurementId: "G-BB4Q8J5TG4"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const analytics = getAnalytics(app);
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadMenu();
+    });
+
+    async function loadMenu() {
+      try {
+        const response = await fetch('menu.html');
+        const menuHTML = await response.text();
+        document.getElementById('menu-container').innerHTML = menuHTML;
+        
+        document.getElementById('logout-button').addEventListener('click', async () => {
+          try {
+            await signOut(auth);
+            console.log('Logout bem-sucedido');
+            localStorage.removeItem('authToken');
+            window.location.href = 'index.html'; // Redirecionar para a página de login
+          } catch (error) {
+            console.error('Erro ao fazer logout:', error);
+          }
+        });
+        
+        document.getElementById('create-report-button').addEventListener('click', () => {
+          window.location.href = 'create-report.html'; // Redirecionar para a página de criação de relatórios
+        });
+
+        document.getElementById('view-reports-button').addEventListener('click', () => {
+          window.location.href = 'view-reports.html'; // Redirecionar para a página de visualização de relatórios
+        });
+      } catch (error) {
+        console.error('Erro ao carregar o menu:', error);
+      }
+    }
+  </script>
+</body>
+</html>
