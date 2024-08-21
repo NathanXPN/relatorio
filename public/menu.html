@@ -1,13 +1,75 @@
-<div class="sidebar">
-    <h2>Dashboard</h2>
-    <ul><!-- menu.html -->
-      <nav>
-        <ul>
-          <li><a href="home.html">Home</a></li>
-          <li><a href="view-reports.html" id="view-reports-button">Ver Relatórios</a></li>
-          <li><a href="create-report.html" id="create-report-button">Criar Relatório</a></li>
-          <li><a href="index.html" id="logout-button">Logout</a></li>
-        </ul>
-      </nav>
-</div>
-  
+<nav>
+  <ul>
+    <li><a href="home.html">Home</a></li>
+    <li><a href="view-reports.html">Visualizar Relatórios</a></li>
+    <li><a href="create-report.html">Criar Relatório</a></li>
+    <li><a href="index.html" id="logout-button">Logout</a></li>
+  </ul>
+</nav>
+
+<style>
+  * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+}
+
+nav {
+  background-color: #333;
+  color: #fff;
+}
+
+nav ul {
+  list-style: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px 0;
+}
+
+nav ul li {
+  margin: 0 15px;
+}
+
+nav ul li a {
+  text-decoration: none;
+  color: #fff;
+  font-size: 16px;
+  padding: 10px 15px;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+nav ul li a:hover,
+nav ul li a:focus {
+  background-color: #555;
+  color: #f0f0f0;
+  border-radius: 5px;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  nav ul {
+    flex-direction: column;
+  }
+
+  nav ul li {
+    margin: 5px 0;
+  }
+
+  nav ul li a {
+    font-size: 18px;
+    padding: 12px 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  nav ul li a {
+    font-size: 16px;
+    padding: 10px 15px;
+  }
+}
+</style>

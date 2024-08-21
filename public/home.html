@@ -7,23 +7,14 @@
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-  <!-- Menu de Navegação -->
   <div id="menu-container"></div>
   
-  <div class="content">
-    <div class="widget">
-      <h3>Overview</h3>
-      <p>Here is an overview of the dashboard content.</p>
-    </div>
-    <div class="widget">
-      <h3>Statistics</h3>
-      <p>Some statistics about the application or user data.</p>
-    </div>
-    <div class="widget">
-      <h3>Recent Activity</h3>
-      <p>List of recent activities or notifications.</p>
-    </div>
+  <div class="dashboard">
+    <h1>Bem-vindo ao Dashboard</h1>
+    <button id="create-report-button" style="background-color: #c025df;">Criar Relatório</button>
+    <button id="view-reports-button" style="background-color: #c025df;">Visualizar Relatórios</button>
   </div>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
     import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
@@ -52,7 +43,7 @@
         const response = await fetch('menu.html');
         const menuHTML = await response.text();
         document.getElementById('menu-container').innerHTML = menuHTML;
-        
+
         document.getElementById('logout-button').addEventListener('click', async () => {
           try {
             await signOut(auth);
@@ -63,7 +54,7 @@
             console.error('Erro ao fazer logout:', error);
           }
         });
-        
+
         document.getElementById('create-report-button').addEventListener('click', () => {
           window.location.href = 'create-report.html'; // Redirecionar para a página de criação de relatórios
         });

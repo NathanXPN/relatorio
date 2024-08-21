@@ -63,3 +63,77 @@
   </script>
 </body>
 </html>
+<style>
+  /* Reset básico */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Estilo geral do body */
+body {
+  font-family: 'Arial', sans-serif;
+  background: linear-gradient(to right, #6a11cb, #ffffff);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+/* Container do login */
+.login-container {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+
+/* Estilo do título */
+.login-container h2 {
+  margin-bottom: 1rem;
+  color: #333;
+  font-size: 1.5rem;
+}
+
+/* Estilo do formulário */
+#login-form {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Estilo dos inputs */
+#login-form input {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+/* Estilo do botão de login */
+#login-form button {
+  padding: 0.75rem;
+  border: none;
+  border-radius: 4px;
+  background: #c025df;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+/* Efeito ao passar o mouse sobre o botão */
+#login-form button:hover {
+  background: #78188b;
+}
+
+/* Estilo da mensagem de erro */
+#error-message {
+  color: #e74c3c;
+  margin-top: 1rem;
+}
+</style>

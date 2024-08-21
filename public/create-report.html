@@ -7,22 +7,34 @@
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-  <!-- Menu de Navegação -->
   <div id="menu-container"></div>
   
   <div class="content">
     <div class="widget">
       <h3>Criar Relatório</h3>
       <form id="report-form">
-        <input type="text" id="report-title" placeholder="Título do Relatório" required>
-        <textarea id="report-content" placeholder="Conteúdo do Relatório" required></textarea>
+        <input type="text" id="nome" placeholder="Nome" required>
+        <input type="text" id="turma" placeholder="Turma" required>
+        <input type="text" id="dia-aula" placeholder="Dia de Aula" required>
+        <input type="text" id="horario-aula" placeholder="Horário da Aula" required>
+        <input type="text" id="professor-responsavel" placeholder="Professor(a) Responsável" required>
+        <input type="text" id="coordenacao-pedagogica" placeholder="Coordenação Pedagógica" required>
+        <textarea id="introducao" placeholder="Introdução" required></textarea>
+        <textarea id="desempenho-academico" placeholder="Desempenho Acadêmico" required></textarea>
+        <textarea id="interacao-social" placeholder="Interação Social" required></textarea>
+        <textarea id="comunicacao-lideranca" placeholder="Comunicação e Liderança" required></textarea>
+        <textarea id="exemplo" placeholder="Exemplo" required></textarea>
+        <textarea id="recomendacoes" placeholder="Recomendações" required></textarea>
+        <textarea id="atenciosamente" placeholder="Atenciosamente" required></textarea>
+        <br/>
         <button type="submit">Criar Relatório</button>
       </form>
     </div>
   </div>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-    import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+    import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
     import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-analytics.js";
 
@@ -47,13 +59,35 @@
       reportForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const title = document.getElementById('report-title').value;
-        const content = document.getElementById('report-content').value;
+        const nome = document.getElementById('nome').value;
+        const turma = document.getElementById('turma').value;
+        const diaAula = document.getElementById('dia-aula').value;
+        const horarioAula = document.getElementById('horario-aula').value;
+        const professorResponsavel = document.getElementById('professor-responsavel').value;
+        const coordenacaoPedagogica = document.getElementById('coordenacao-pedagogica').value;
+        const introducao = document.getElementById('introducao').value;
+        const desempenhoAcademico = document.getElementById('desempenho-academico').value;
+        const interacaoSocial = document.getElementById('interacao-social').value;
+        const comunicacaoLideranca = document.getElementById('comunicacao-lideranca').value;
+        const exemplo = document.getElementById('exemplo').value;
+        const recomendacoes = document.getElementById('recomendacoes').value;
+        const atenciosamente = document.getElementById('atenciosamente').value;
 
         try {
           await addDoc(collection(db, 'reports'), {
-            title: title,
-            content: content,
+            nome: nome,
+            turma: turma,
+            diaAula: diaAula,
+            horarioAula: horarioAula,
+            professorResponsavel: professorResponsavel,
+            coordenacaoPedagogica: coordenacaoPedagogica,
+            introducao: introducao,
+            desempenhoAcademico: desempenhoAcademico,
+            interacaoSocial: interacaoSocial,
+            comunicacaoLideranca: comunicacaoLideranca,
+            exemplo: exemplo,
+            recomendacoes: recomendacoes,
+            atenciosamente: atenciosamente,
             createdAt: new Date()
           });
           alert('Relatório criado com sucesso!');
@@ -79,7 +113,7 @@
             console.error('Erro ao fazer logout:', error);
           }
         });
-        
+
         document.getElementById('create-report-button').addEventListener('click', () => {
           window.location.href = 'create-report.html'; // Redirecionar para a página de criação de relatórios
         });
@@ -94,3 +128,115 @@
   </script>
 </body>
 </html>
+
+<style>
+  /* styles.css */
+
+/* Definindo algumas cores básicas */
+:root {
+  --primary-color: #c025df;
+  --secondary-color: #6c757d;
+  --background-color: #f8f9fa;
+  --text-color: #343a40;
+  --border-color: #ced4da;
+}
+
+/* Estilizando o corpo da página */
+body {
+  font-family: 'Arial', sans-serif;
+  background-color: var(--background-color);
+  margin: 0;
+  padding: 0;
+}
+
+/* Container do conteúdo */
+.content {
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilizando o widget */
+.widget {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Cabeçalho do widget */
+.widget h3 {
+  margin-top: 0;
+  color: var(--text-color);
+  font-size: 1.5em;
+  border-bottom: 2px solid var(--primary-color);
+  padding-bottom: 10px;
+}
+
+/* Estilizando o formulário */
+form {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Estilizando os inputs e textarea */
+input[type="text"], textarea {
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 10px;
+  margin-bottom: 15px;
+  font-size: 1em;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 150px;
+}
+
+/* Botão de envio do formulário */
+button {
+  background-color: var(--primary-color);
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 15px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #6c1a7c;
+}
+
+/* Estilo para mensagens de erro e sucesso */
+.error-message, .success-message {
+  margin-top: 15px;
+  padding: 10px;
+  border-radius: 4px;
+}
+
+.error-message {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.success-message {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+#menu-container {
+  background-color: #333;
+  padding: 10px;
+}
+
+#menu-container a {
+  color: #fff;
+  text-decoration: none;
+  margin: 0 10px;
+}
+</style>

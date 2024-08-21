@@ -1,88 +1,55 @@
 body {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background-color: #f0f0f0;
-  }
-  
-  .login-container {
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 5px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  }
-  
-  h2 {
-    margin: 0 0 20px;
-    text-align: center;
-  }
-  
-  form {
-    display: flex;
-    flex-direction: column;
-  }
-  
-  input {
-    margin-bottom: 10px;
-    padding: 10px;
-    font-size: 16px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-  }
-  
-  button {
-    padding: 10px;
-    font-size: 16px;
-    background-color: #28a745;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-  }
-  
-  button:hover {
-    background-color: #218838;
-  }
-  
-  #error-message {
-    color: red;
-    text-align: center;
-    margin-top: 10px;
-  }
-  
-  /* Styles for the sidebar */
-.sidebar {
-  height: 100vh;
-  width: 250px;
-  position: fixed;
-  top: 0;
-  left: 0;
-  background-color: #333;
-  color: white;
-  padding: 15px;
-}
-.sidebar h2 {
-  margin-top: 0;
-}
-.sidebar ul {
-  list-style: none;
+  font-family: Arial, sans-serif;
+  margin: 0;
   padding: 0;
+  box-sizing: border-box;
 }
-.sidebar ul li {
-  margin: 10px 0;
+
+.login-container, .content, .dashboard {
+  max-width: 800px;
+  margin: auto;
+  padding: 20px;
 }
-.sidebar ul li a {
-  color: white;
-  text-decoration: none;
-  display: block;
+
+.login-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.login-container input, .login-container button {
+  margin-bottom: 10px;
+}
+
+.widget {
+  border: 1px solid #ccc;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+textarea {
+  width: 100%;
+  height: 150px;
   padding: 10px;
-  border-radius: 5px;
-  border: 1px solid transparent;
+  border-radius: 4px;
+  border: 1px solid #ddd;
 }
-.sidebar ul li a:hover {
-  background-color: #575757;
-  border: 1px solid white;
+
+button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+@media (max-width: 600px) {
+  .login-container, .content, .dashboard {
+    padding: 10px;
+  }
 }
