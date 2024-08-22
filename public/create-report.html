@@ -90,20 +90,27 @@
             atenciosamente: atenciosamente,
             createdAt: new Date()
           });
-          alert('Relatório criado com sucesso!');
+          showAlert('success', 'Relatório criado com sucesso!');
+          clearForm(); // Limpar o formulário
         } catch (error) {
+          showAlert('error', 'Erro ao criar relatório.');
           console.error('Erro ao criar relatório:', error);
         }
       });
     });
 
     async function loadMenu() {
-      try {
-        const response = await fetch('menu.html');
-        const menuHTML = await response.text();
-        document.getElementById('menu-container').innerHTML = menuHTML;
+  try {
+    const response = await fetch('menu.html');
+    const menuHTML = await response.text();
+    const menuContainer = document.getElementById('menu-container');
+    
+    if (menuContainer) {
+      menuContainer.innerHTML = menuHTML;
 
-        document.getElementById('logout-button').addEventListener('click', async () => {
+      const logoutButton = document.getElementById('logout-button');
+      if (logoutButton) {
+        logoutButton.addEventListener('click', async () => {
           try {
             await signOut(auth);
             console.log('Logout bem-sucedido');
@@ -113,32 +120,47 @@
             console.error('Erro ao fazer logout:', error);
           }
         });
-
-        document.getElementById('create-report-button').addEventListener('click', () => {
-          window.location.href = 'create-report.html'; // Redirecionar para a página de criação de relatórios
-        });
-
-        document.getElementById('view-reports-button').addEventListener('click', () => {
-          window.location.href = 'view-reports.html'; // Redirecionar para a página de visualização de relatórios
-        });
-      } catch (error) {
-        console.error('Erro ao carregar o menu:', error);
+      } else {
+        console.error('Elemento #logout-button não encontrado.');
       }
+    } else {
+      console.error('Elemento #menu-container não encontrado.');
+    }
+  } catch (error) {
+    console.error('Erro ao carregar o menu:', error);
+  }
+}
+
+    function showAlert(type, message) {
+      const alertContainer = document.createElement('div');
+      alertContainer.classList.add('alert', type);
+      alertContainer.textContent = message;
+      document.body.appendChild(alertContainer);
+
+      setTimeout(() => {
+        alertContainer.remove();
+      }, 5000); // Remove the alert after 5 seconds
+    }
+
+    function clearForm() {
+      document.getElementById('report-form').reset(); // Limpa todos os campos do formulário
     }
   </script>
 </body>
 </html>
 
 <style>
-  /* styles.css */
-
-/* Definindo algumas cores básicas */
+  /* Definindo algumas cores básicas */
 :root {
   --primary-color: #c025df;
   --secondary-color: #6c757d;
   --background-color: #f8f9fa;
   --text-color: #343a40;
   --border-color: #ced4da;
+  --success-color: #28a745;
+  --error-color: #dc3545;
+  --warning-color: #ffc107;
+  --info-color: #17a2b8;
 }
 
 /* Estilizando o corpo da página */
@@ -155,7 +177,7 @@ body {
   margin: 20px auto;
   padding: 20px;
   background-color: #ffffff;
-  border-radius: 8px;
+  border-radius: 20px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -211,24 +233,35 @@ button:hover {
 }
 
 /* Estilo para mensagens de erro e sucesso */
-.error-message, .success-message {
-  margin-top: 15px;
-  padding: 10px;
-  border-radius: 4px;
+.alert {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 15px;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 16px;
+  z-index: 1000;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
-.error-message {
-  background-color: #f8d7da;
-  color: #721c24;
-  border: 1px solid #f5c6cb;
+.alert.success {
+  background-color: var(--success-color); /* Verde */
 }
 
-.success-message {
-  background-color: #d4edda;
-  color: #155724;
-  border: 1px solid #c3e6cb;
+.alert.error {
+  background-color: var(--error-color); /* Vermelho */
 }
 
+.alert.warning {
+  background-color: var(--warning-color); /* Amarelo */
+}
+
+.alert.info {
+  background-color: var(--info-color); /* Azul */
+}
+
+/* Estilo para o menu */
 #menu-container {
   background-color: #333;
   padding: 10px;
@@ -238,5 +271,9 @@ button:hover {
   color: #fff;
   text-decoration: none;
   margin: 0 10px;
+}
+
+#menu-container a:hover {
+  text-decoration: underline;
 }
 </style>

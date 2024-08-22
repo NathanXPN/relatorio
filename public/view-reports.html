@@ -8,10 +8,14 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
+  <div id="alert-container"></div>
   <div id="menu-container"></div>
 
   <div class="content">
     <h3>Visualizar Relatórios</h3>
+    <div id="search-container">
+      <input type="text" id="search-input" placeholder="Pesquisar por nome, data ou turma">
+    </div>
     <div id="reports-container">
       <!-- Relatórios serão carregados aqui -->
     </div>
@@ -61,12 +65,6 @@
         
         <label for="atenciosamente">Atenciosamente:</label>
         <input type="text" id="atenciosamente" name="atenciosamente" required>
-        
-        <label for="image1">Imagem 1:</label>
-        <input type="file" id="image1" name="image1" accept="image/*" required>
-        
-        <label for="image2">Imagem 2:</label>
-        <input type="file" id="image2" name="image2" accept="image/*">
 
         <button type="submit">Salvar</button>
         <button type="button" id="export-pdf-button" style="background-color: #c025df;">Exportar PDF</button>
@@ -74,396 +72,302 @@
     </div>
   </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-    import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-    import { getFirestore, collection, getDocs, doc, deleteDoc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-analytics.js";
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+  import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+  import { getFirestore, collection, getDocs, doc, deleteDoc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-analytics.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyCennWobnxB465Wo3gzSDcTdeOQcR9b0HE",
-      authDomain: "relatorio-31622.firebaseapp.com",
-      projectId: "relatorio-31622",
-      storageBucket: "relatorio-31622.appspot.com",
-      messagingSenderId: "744396968175",
-      appId: "1:744396968175:web:689537ff8380e8f9c7cb1a",
-      measurementId: "G-BB4Q8J5TG4"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyCennWobnxB465Wo3gzSDcTdeOQcR9b0HE",
+    authDomain: "relatorio-31622.firebaseapp.com",
+    projectId: "relatorio-31622",
+    storageBucket: "relatorio-31622.appspot.com",
+    messagingSenderId: "744396968175",
+    appId: "1:744396968175:web:689537ff8380e8f9c7cb1a",
+    measurementId: "G-BB4Q8J5TG4"
+  };
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    const analytics = getAnalytics(app);
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const analytics = getAnalytics(app);
 
-    document.addEventListener('DOMContentLoaded', () => {
-      loadMenu();
+  document.addEventListener('DOMContentLoaded', () => {
+    loadMenu();
+    loadReports();
+  });
+
+  async function loadMenu() {
+    try {
+      const response = await fetch('menu.html');
+      const menuHTML = await response.text();
+      document.getElementById('menu-container').innerHTML = menuHTML;
+
+      document.getElementById('logout-button').addEventListener('click', async () => {
+        try {
+          await signOut(auth);
+          console.log('Logout bem-sucedido');
+          localStorage.removeItem('authToken');
+          window.location.href = 'index.html'; // Redirecionar para a página de login
+        } catch (error) {
+          console.error('Erro ao fazer logout:', error);
+        }
+      });
+    } catch (error) {
+      console.error('Erro ao carregar o menu:', error);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    loadMenu();
+    loadReports();
+
+    // Adiciona evento de input para a pesquisa
+    document.getElementById('search-input').addEventListener('input', () => {
       loadReports();
     });
+  });
 
-    async function loadMenu() {
-      try {
-        const response = await fetch('menu.html');
-        const menuHTML = await response.text();
-        document.getElementById('menu-container').innerHTML = menuHTML;
+  async function loadReports() {
+    try {
+      const searchTerm = document.getElementById('search-input').value.toLowerCase();
+      const reportsCollection = collection(db, 'reports');
+      const reportsSnapshot = await getDocs(reportsCollection);
+      let reports = reportsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt ? doc.data().createdAt.toDate() : null // Converter timestamp para objeto Date
+      }));
 
-        document.getElementById('logout-button').addEventListener('click', async () => {
-          try {
-            await signOut(auth);
-            console.log('Logout bem-sucedido');
-            localStorage.removeItem('authToken');
-            window.location.href = 'index.html'; // Redirecionar para a página de login
-          } catch (error) {
-            console.error('Erro ao fazer logout:', error);
-          }
+      // Filtrar relatórios com base no termo de pesquisa
+      reports = reports.filter(report => {
+        const nomeMatch = report.nome.toLowerCase().includes(searchTerm);
+        const turmaMatch = report.turma.toLowerCase().includes(searchTerm);
+        const dateMatch = (report.createdAt ? report.createdAt.toLocaleDateString('pt-BR') : '').includes(searchTerm);
+        return nomeMatch || turmaMatch || dateMatch;
+      });
+
+      const reportsContainer = document.getElementById('reports-container');
+      reportsContainer.innerHTML = '';
+
+      if (reports.length > 0) {
+        reports.forEach(report => {
+          const reportElement = document.createElement('div');
+          reportElement.classList.add('report');
+
+          // Formatar data e hora
+          const dateOptions = { year: 'numeric', month: '2-digit', day: '2-digit' };
+          const timeOptions = { hour: '2-digit', minute: '2-digit' };
+          const date = report.createdAt ? report.createdAt.toLocaleDateString('pt-BR', dateOptions) : '';
+          const time = report.createdAt ? report.createdAt.toLocaleTimeString('pt-BR', timeOptions) : '';
+
+          reportElement.innerHTML = `
+            <h4>${report.nome}</h4>
+            <p><strong>Turma:</strong> ${report.turma}</p>
+            <p><strong>Dia de Aula:</strong> ${report.diaAula}</p>
+            <p><strong>Horário da Aula:</strong> ${report.horarioAula}</p>
+            <p><strong>Professor(a) Responsável:</strong> ${report.professorResponsavel}</p>
+            <p><strong>Data e Hora:</strong> ${date} ${time}</p>
+            <div class="actions">
+              <button class="edit-button" data-id="${report.id}">Editar</button>
+              <button class="delete-button" data-id="${report.id}">Excluir</button>
+            </div>
+          `;
+
+          reportsContainer.appendChild(reportElement);
         });
-      } catch (error) {
-        console.error('Erro ao carregar o menu:', error);
+
+        document.querySelectorAll('.edit-button').forEach(button => {
+          button.addEventListener('click', (e) => {
+            const reportId = e.target.dataset.id;
+            showEditModal(reportId);
+          });
+        });
+
+        document.querySelectorAll('.delete-button').forEach(button => {
+          button.addEventListener('click', async (e) => {
+            const reportId = e.target.dataset.id;
+            try {
+              await deleteDoc(doc(db, 'reports', reportId));
+              showAlert('success', 'Relatório excluído com sucesso!');
+              loadReports();
+            } catch (error) {
+              console.error('Erro ao excluir relatório:', error);
+              showAlert('error', 'Erro ao excluir relatório.');
+            }
+          });
+        });
+      } else {
+        reportsContainer.innerHTML = '<p>Nenhum relatório encontrado.</p>';
       }
+    } catch (error) {
+      console.error('Erro ao carregar relatórios:', error);
+      showAlert('error', 'Erro ao carregar relatórios.');
     }
-
-    async function loadReports() {
-  try {
-    const reportsCollection = collection(db, 'reports');
-    const reportsSnapshot = await getDocs(reportsCollection);
-    const reports = reportsSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt ? doc.data().createdAt.toDate() : null // Converter timestamp para objeto Date
-    }));
-
-    const reportsContainer = document.getElementById('reports-container');
-    reportsContainer.innerHTML = '';
-
-    if (reports.length > 0) {
-      reports.forEach(report => {
-        const reportElement = document.createElement('div');
-        reportElement.classList.add('report');
-
-        // Formatar data e hora
-        const dateOptions = { year: 'numeric', month: '2-digit', day: '2-digit' };
-        const timeOptions = { hour: '2-digit', minute: '2-digit' };
-        const date = report.createdAt ? report.createdAt.toLocaleDateString('pt-BR', dateOptions) : '';
-        const time = report.createdAt ? report.createdAt.toLocaleTimeString('pt-BR', timeOptions) : '';
-
-        reportElement.innerHTML = `
-          <h4>${report.nome}</h4>
-          <p><strong>Turma:</strong> ${report.turma}</p>
-          <p><strong>Dia de Aula:</strong> ${report.diaAula}</p>
-          <p><strong>Horário da Aula:</strong> ${report.horarioAula}</p>
-          <p><strong>Professor(a) Responsável:</strong> ${report.professorResponsavel}</p>
-          <p><strong>Data e Hora:</strong> ${date} ${time}</p>
-          <div class="actions">
-            <button class="edit-button" data-id="${report.id}">Editar</button>
-            <button class="delete-button" data-id="${report.id}">Excluir</button>
-          </div>
-        `;
-
-        reportsContainer.appendChild(reportElement);
-      });
-
-      document.querySelectorAll('.edit-button').forEach(button => {
-        button.addEventListener('click', (e) => {
-          const reportId = e.target.dataset.id;
-          showEditModal(reportId);
-        });
-      });
-
-      document.querySelectorAll('.delete-button').forEach(button => {
-        button.addEventListener('click', async (e) => {
-          const reportId = e.target.dataset.id;
-          try {
-            await deleteDoc(doc(db, 'reports', reportId));
-            alert('Relatório excluído com sucesso!');
-            loadReports();
-          } catch (error) {
-            console.error('Erro ao excluir relatório:', error);
-          }
-        });
-      });
-    } else {
-      reportsContainer.innerHTML = '<p>Nenhum relatório encontrado.</p>';
-    }
-  } catch (error) {
-    console.error('Erro ao carregar relatórios:', error);
   }
-}
 
-    function showEditModal(reportId) {
-      const modal = document.getElementById('edit-modal');
-      const closeModal = document.querySelector('#edit-modal .close');
-      const form = document.getElementById('edit-form');
-      const exportPdfButton = document.getElementById('export-pdf-button');
-      
-      async function loadReportData() {
-        try {
-          const reportRef = doc(db, 'reports', reportId);
-          const reportSnapshot = await getDoc(reportRef);
-          
-          if (reportSnapshot.exists()) {
-            const reportData = reportSnapshot.data();
-            
-            form.querySelector('#nome').value = reportData.nome;
-            form.querySelector('#turma').value = reportData.turma;
-            form.querySelector('#diaAula').value = reportData.diaAula;
-            form.querySelector('#horarioAula').value = reportData.horarioAula;
-            form.querySelector('#professorResponsavel').value = reportData.professorResponsavel;
-            form.querySelector('#coordenacaoPedagogica').value = reportData.coordenacaoPedagogica;
-            form.querySelector('#introducao').value = reportData.introducao;
-            form.querySelector('#desempenhoAcademico').value = reportData.desempenhoAcademico;
-            form.querySelector('#interacaoSocial').value = reportData.interacaoSocial;
-            form.querySelector('#comunicacaoLideranca').value = reportData.comunicacaoLideranca;
-            form.querySelector('#exemplo').value = reportData.exemplo;
-            form.querySelector('#recomendacoes').value = reportData.recomendacoes;
-            form.querySelector('#atenciosamente').value = reportData.atenciosamente;
+  function showEditModal(reportId) {
+    const modal = document.getElementById('edit-modal');
+    const closeModal = document.querySelector('#edit-modal .close');
+    const form = document.getElementById('edit-form');
+    const exportPdfButton = document.getElementById('export-pdf-button');
 
-            exportPdfButton.addEventListener('click', () => {
-              const imageFiles = [
-                document.querySelector('#image1').files[0],
-                document.querySelector('#image2').files[0]
-              ];
-              
-              if (imageFiles[0]) {
-                generatePDF(reportData, imageFiles);
-              } else {
-                alert('Por favor, faça upload da Imagem 1.');
-              }
-            });
-            
-            modal.style.display = 'block';
-          } else {
-            alert('Relatório não encontrado.');
-          }
-        } catch (error) {
-          console.error('Erro ao carregar dados do relatório:', error);
-        }
-      }
-      
-      loadReportData();
-      
-      closeModal.addEventListener('click', () => {
-        modal.style.display = 'none';
-      });
-      
-      window.addEventListener('click', (event) => {
-        if (event.target === modal) {
-          modal.style.display = 'none';
-        }
-      });
-      
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const updatedReport = {
-          nome: form.querySelector('#nome').value,
-          turma: form.querySelector('#turma').value,
-          diaAula: form.querySelector('#diaAula').value,
-          horarioAula: form.querySelector('#horarioAula').value,
-          professorResponsavel: form.querySelector('#professorResponsavel').value,
-          coordenacaoPedagogica: form.querySelector('#coordenacaoPedagogica').value,
-          introducao: form.querySelector('#introducao').value,
-          desempenhoAcademico: form.querySelector('#desempenhoAcademico').value,
-          interacaoSocial: form.querySelector('#interacaoSocial').value,
-          comunicacaoLideranca: form.querySelector('#comunicacaoLideranca').value,
-          exemplo: form.querySelector('#exemplo').value,
-          recomendacoes: form.querySelector('#recomendacoes').value,
-          atenciosamente: form.querySelector('#atenciosamente').value,
-        };
+    async function loadReportData() {
+      try {
+        const reportRef = doc(db, 'reports', reportId);
+        const reportSnapshot = await getDoc(reportRef);
+        const report = reportSnapshot.data();
         
-        try {
-          await updateDoc(doc(db, 'reports', reportId), updatedReport);
-          alert('Relatório atualizado com sucesso!');
-          loadReports();
-          modal.style.display = 'none';
-        } catch (error) {
-          console.error('Erro ao atualizar relatório:', error);
-        }
-      });
-    }
-
-    async function generatePDF(reportData, imageFiles) {
-  const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF();
-  const logoURL = './assets/Design_sem_nome-removebg-preview.png'; // Caminho para o logotipo
-  const lineHeight = 10;
-  const xLogo = 150; // Posição horizontal do logotipo
-  const yLogo = 10;  // Posição vertical do logotipo
-  const sectionMargin = 10; // Margem para as seções
-  let currentY = 20; // Posição vertical inicial
-
-  // Função para adicionar uma seção de texto
-  const addTextSection = (title, content, isHeader = false) => {
-    if (currentY + 40 > pdf.internal.pageSize.height) {
-      pdf.addPage();
-      currentY = 20;
-      addLogo(); // Adicionar o logotipo em novas páginas
-    }
-    pdf.setFontSize(isHeader ? 14 : 12);
-    pdf.setFont("helvetica", isHeader ? "bold" : "normal");
-    pdf.text(title, 10, currentY);
-    currentY += isHeader ? sectionMargin + 2 : sectionMargin;
-    pdf.setFontSize(12);
-    pdf.text(content, 10, currentY);
-    currentY += lineHeight * (content.split('\n').length + 1); // Ajusta o espaçamento para múltiplas linhas
-  };
-
-  // Função para adicionar uma imagem ao PDF
-  const addImageToPDF = (file, x, y, width, height) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const imgData = event.target.result;
-        pdf.addImage(imgData, 'JPEG', x, y, width, height);
-        resolve();
-      };
-      reader.onerror = (error) => reject(error);
-      reader.readAsDataURL(file);
-    });
-  };
-
-  // Função para adicionar o logotipo ao PDF
-  const addLogo = () => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => {
-        pdf.addImage(img, 'PNG', xLogo, yLogo, 40, 30);
-        resolve();
-      };
-      img.onerror = (error) => reject(error);
-      img.src = logoURL;
-    });
-  };
-
-  // Adicionar o logotipo na primeira página
-  try {
-    await addLogo();
-  } catch (error) {
-    console.error('Erro ao adicionar o logotipo:', error);
-  }
-
-  // Adicionar o conteúdo do relatório
-  addTextSection('Aluno:', reportData.nome, true);
-  addTextSection('Turma:', reportData.turma, true);
-  addTextSection('Dia de aula:', reportData.diaAula, true);
-  addTextSection('Horário de aula:', reportData.horarioAula, true);
-  addTextSection('Professora Responsável:', reportData.professorResponsavel, true);
-  addTextSection('Coordenação Pedagógica:', reportData.coordenacaoPedagogica, true);
-
-  addTextSection('Introdução', reportData.introducao);
-  addTextSection('Desempenho Acadêmico', reportData.desempenhoAcademico);
-  addTextSection('Interação Social', reportData.interacaoSocial);
-  addTextSection('Comunicação e Liderança', reportData.comunicacaoLideranca);
-
-  addTextSection('Exemplo', reportData.exemplo);
-  addTextSection('Recomendações', reportData.recomendacoes);
-  addTextSection('Atenciosamente', 'Professora Bruna');
-
-  // Adicionar imagens ao PDF com tamanho e posicionamento similar ao documento fornecido
-  let yImage = currentY + 10;
-  const imageWidth = 180; // Largura da imagem
-  const imageHeight = 100; // Altura da imagem
-
-  for (let i = 0; i < imageFiles.length; i++) {
-    const file = imageFiles[i];
-    if (file) {
-      if (yImage + imageHeight > pdf.internal.pageSize.height) {
-        pdf.addPage();
-        try {
-          await addLogo(); // Adicionar o logotipo em novas páginas
-        } catch (error) {
-          console.error('Erro ao adicionar o logotipo na nova página:', error);
-        }
-        yImage = 20; // Resetar a posição vertical para novas páginas
-      }
-      try {
-        await addImageToPDF(file, 15, yImage, imageWidth, imageHeight);
+        form.nome.value = report.nome || '';
+        form.turma.value = report.turma || '';
+        form.diaAula.value = report.diaAula || '';
+        form.horarioAula.value = report.horarioAula || '';
+        form.professorResponsavel.value = report.professorResponsavel || '';
+        form.coordenacaoPedagogica.value = report.coordenacaoPedagogica || '';
+        form.introducao.value = report.introducao || '';
+        form.desempenhoAcademico.value = report.desempenhoAcademico || '';
+        form.interacaoSocial.value = report.interacaoSocial || '';
+        form.comunicacaoLideranca.value = report.comunicacaoLideranca || '';
+        form.exemplo.value = report.exemplo || '';
+        form.recomendacoes.value = report.recomendacoes || '';
+        form.atenciosamente.value = report.atenciosamente || '';
+        
+        modal.style.display = 'block';
       } catch (error) {
-        console.error('Erro ao adicionar a imagem ao PDF:', error);
+        console.error('Erro ao carregar dados do relatório:', error);
+        showAlert('error', 'Erro ao carregar dados do relatório.');
       }
-      yImage += imageHeight + 10; // Ajustar a posição vertical para a próxima imagem
     }
+
+    loadReportData();
+
+    closeModal.onclick = () => {
+      modal.style.display = 'none';
+    };
+
+    window.onclick = (event) => {
+      if (event.target === modal) {
+        modal.style.display = 'none';
+      }
+    };
+
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      try {
+        await updateDoc(doc(db, 'reports', reportId), {
+          nome: form.nome.value,
+          turma: form.turma.value,
+          diaAula: form.diaAula.value,
+          horarioAula: form.horarioAula.value,
+          professorResponsavel: form.professorResponsavel.value,
+          coordenacaoPedagogica: form.coordenacaoPedagogica.value,
+          introducao: form.introducao.value,
+          desempenhoAcademico: form.desempenhoAcademico.value,
+          interacaoSocial: form.interacaoSocial.value,
+          comunicacaoLideranca: form.comunicacaoLideranca.value,
+          exemplo: form.exemplo.value,
+          recomendacoes: form.recomendacoes.value,
+          atenciosamente: form.atenciosamente.value
+        });
+        showAlert('success', 'Relatório atualizado com sucesso!');
+        modal.style.display = 'none';
+        loadReports();
+      } catch (error) {
+        console.error('Erro ao atualizar relatório:', error);
+        showAlert('error', 'Erro ao atualizar relatório.');
+      }
+    };
+
+    exportPdfButton.onclick = async () => {
+      try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        // Definir margens
+        const margin = 10;
+        const pageWidth = doc.internal.pageSize.getWidth() - 2 * margin;
+        const pageHeight = doc.internal.pageSize.getHeight() - 2 * margin;
+        const lineHeight = 10;
+
+        doc.setFontSize(12);
+        doc.text(`Nome: ${form.nome.value}`, margin, margin + lineHeight);
+        doc.text(`Turma: ${form.turma.value}`, margin, margin + 2 * lineHeight);
+        doc.text(`Dia de Aula: ${form.diaAula.value}`, margin, margin + 3 * lineHeight);
+        doc.text(`Horário da Aula: ${form.horarioAula.value}`, margin, margin + 4 * lineHeight);
+        doc.text(`Professor(a) Responsável: ${form.professorResponsavel.value}`, margin, margin + 5 * lineHeight);
+        doc.text(`Coordenação Pedagógica: ${form.coordenacaoPedagogica.value}`, margin, margin + 6 * lineHeight);
+        doc.text(`Introdução: ${form.introducao.value}`, margin, margin + 7 * lineHeight);
+        doc.text(`Desempenho Acadêmico: ${form.desempenhoAcademico.value}`, margin, margin + 8 * lineHeight);
+        doc.text(`Interação Social: ${form.interacaoSocial.value}`, margin, margin + 9 * lineHeight);
+        doc.text(`Comunicação e Liderança: ${form.comunicacaoLideranca.value}`, margin, margin + 10 * lineHeight);
+        doc.text(`Exemplo: ${form.exemplo.value}`, margin, margin + 11 * lineHeight);
+        doc.text(`Recomendações: ${form.recomendacoes.value}`, margin, margin + 12 * lineHeight);
+        doc.text(`Atenciosamente: ${form.atenciosamente.value}`, margin, margin + 13 * lineHeight);
+
+        // Adicionar quebra de página se necessário
+        let contentHeight = 14 * lineHeight + 2 * margin;
+        if (contentHeight > pageHeight) {
+          doc.addPage();
+          contentHeight = 0;
+        }
+
+        doc.save(`relatorio_${reportId}.pdf`);
+      } catch (error) {
+        console.error('Erro ao exportar PDF:', error);
+        showAlert('error', 'Erro ao exportar PDF.');
+      }
+    };
   }
 
-  // Finalizar e gerar o PDF
-  try {
-    const pdfData = pdf.output('blob');
-    const pdfBlob = new Blob([pdfData], { type: 'application/pdf' });
-    const pdfURL = URL.createObjectURL(pdfBlob);
-    const link = document.createElement('a');
-    link.href = pdfURL;
-    link.download = `${reportData.nome.replace(/\s+/g, '_')}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    alert('PDF gerado com sucesso!');
-  } catch (error) {
-    console.error('Erro ao gerar o PDF:', error);
-    alert('Erro ao gerar PDF. Veja o console para detalhes.');
+  function showAlert(type, message) {
+  const alertContainer = document.getElementById('alert-container');
+  if (alertContainer) {
+    alertContainer.innerHTML = `<div class="alert ${type}">${message}</div>`;
+    setTimeout(() => {
+      alertContainer.innerHTML = '';
+    }, 3000);
+  } else {
+    console.error('Elemento de alerta não encontrado.');
   }
 }
+</script>
 
-  </script>
+  
 </body>
 </html>
-
 <style>
-  /* Body and modal styling */
-body {
-  font-family: Arial, sans-serif;
-  margin: 0;
-  padding: 0;
-  background-color: #f4f4f4;
-}
-
-#menu-container {
-  background-color: #333;
-  padding: 10px;
-}
-
-#menu-container a {
+  /* Estilo de alertas */
+.alert {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 15px;
+  border-radius: 5px;
   color: #fff;
-  text-decoration: none;
-  margin: 0 10px;
+  font-size: 16px;
+  z-index: 1000;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
-.content {
-  padding: 20px;
+.alert.success {
+  background-color: #28a745; /* Verde */
 }
 
-.report {
-  background: #fff;
-  border-radius: 8px;
-  padding: 20px;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+.alert.error {
+  background-color: #dc3545; /* Vermelho */
 }
 
-.report h4 {
-  margin-top: 0;
+.alert.warning {
+  background-color: #ffc107; /* Amarelo */
 }
 
-.actions {
-  margin-top: 10px;
+.alert.info {
+  background-color: #17a2b8; /* Azul */
 }
 
-.edit-button, .delete-button {
-  background-color: #007bff;
-  color: white;
-  border: none;
-  padding: 10px;
-  border-radius: 4px;
-  cursor: pointer;
-  margin-right: 5px;
-}
-
-.delete-button {
-  background-color: #dc3545;
-}
-
-.edit-button:hover, .delete-button:hover {
-  opacity: 0.8;
-}
-
-/* Modal styling */
+/* Estilo do modal */
 .modal {
   display: none;
   position: fixed;
@@ -477,67 +381,151 @@ body {
 }
 
 .modal-content {
-  background-color: #fefefe;
+  background-color: #fff;
   margin: 5% auto;
   padding: 20px;
-  border: 1px solid #888;
+  border: 1px solid #ddd;
   width: 90%;
   max-width: 600px;
-  border-radius: 8px;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
 
-/* Close button styling */
+/* Botão de fechar */
 .close {
   color: #aaa;
   float: right;
-  font-size: 28px;
+  font-size: 24px;
   font-weight: bold;
 }
 
 .close:hover,
 .close:focus {
-  color: black;
+  color: #333;
   text-decoration: none;
   cursor: pointer;
 }
 
-/* Form styling */
-form {
+/* Estilo do formulário */
+#edit-form {
   display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
+  flex-direction: column;
+  gap: 10px;
 }
 
 label {
-  flex-basis: 100%;
   font-weight: bold;
+  margin-bottom: 5px;
 }
 
 input[type="text"], textarea {
-  flex: 1;
-  min-width: 200px;
-  max-width: 100%;
-  padding: 8px;
-  border-radius: 4px;
+  padding: 10px;
   border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 textarea {
   resize: vertical;
-  height: 100px;
+  min-height: 80px;
 }
 
-button[type="submit"] {
-  background-color: green;
-  color: white;
+button {
+  background-color: #007bff;
+  color: #fff;
   border: none;
-  padding: 10px;
-  border-radius: 4px;
+  padding: 12px 20px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 10px 0;
   cursor: pointer;
-  margin-top: 10px;
+  border-radius: 8px;
+  transition: background-color 0.3s;
 }
 
-button[type="submit"]:hover {
-  opacity: 0.8;
+button:hover {
+  background-color: #0056b3;
+}
+
+button#export-pdf-button {
+  background-color: #c025df;
+}
+
+button#export-pdf-button:hover {
+  background-color: #a21abf;
+}
+
+/* Estilo dos relatórios */
+#reports-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px; /* Espaçamento entre os relatórios */
+}
+
+.report {
+  flex: 1 1 calc(33.333% - 20px); /* Três relatórios por linha com espaçamento */
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .report {
+    flex: 1 1 100%; /* Um relatório por linha em telas menores */
+  }
+}
+
+.actions {
+  margin-top: 15px;
+}
+
+.actions button {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  padding: 10px 15px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 8px;
+  margin-right: 5px;
+  transition: background-color 0.3s;
+}
+
+.actions .delete-button {
+  background-color: #dc3545;
+}
+
+.actions .delete-button:hover {
+  background-color: #c82333;
+}
+
+.actions .edit-button {
+  background-color: #17a2b8;
+}
+
+.actions .edit-button:hover {
+  background-color: #138496;
+}
+
+/* Estilo do campo de pesquisa */
+#search-container {
+  margin-bottom: 20px;
+}
+
+#search-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
 }
 </style>
